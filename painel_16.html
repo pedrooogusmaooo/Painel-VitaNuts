@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Vendas — Vitanuts</title>
+<style>
+/* ===================== Nocturne — design tokens e componentes base ===================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root {
+  --color-bg: #161826;
+  --color-surface: #232532;
+  --color-text: #e9e9ed;
+  --color-accent: #9184d9;
+  --color-accent-2: #a7a1db;
+  --color-divider: color-mix(in srgb, #e9e9ed 16%, transparent);
+  --color-neutral-100: #f3f5fe;
+  --color-neutral-200: #e4e7f5;
+  --color-neutral-300: #cfd3e5;
+  --color-neutral-400: #b2b6ca;
+  --color-neutral-500: #9397ab;
+  --color-neutral-600: #75798c;
+  --color-neutral-700: #595d6c;
+  --color-neutral-800: #3f424d;
+  --color-neutral-900: #292b31;
+  --color-accent-100: color-mix(in srgb, var(--color-accent) 12%, white);
+  --color-accent-200: color-mix(in srgb, var(--color-accent) 28%, white);
+  --color-accent-300: color-mix(in srgb, var(--color-accent) 46%, white);
+  --color-accent-400: color-mix(in srgb, var(--color-accent) 68%, white);
+  --color-accent-500: var(--color-accent);
+  --color-accent-600: color-mix(in srgb, var(--color-accent) 80%, black);
+  --color-accent-700: color-mix(in srgb, var(--color-accent) 62%, black);
+  --color-accent-800: color-mix(in srgb, var(--color-accent) 44%, black);
+  --color-accent-900: color-mix(in srgb, var(--color-accent) 28%, black);
+  --color-accent-2-100: color-mix(in srgb, var(--color-accent-2) 12%, white);
+  --color-accent-2-200: color-mix(in srgb, var(--color-accent-2) 28%, white);
+  --color-accent-2-300: color-mix(in srgb, var(--color-accent-2) 46%, white);
+  --color-accent-2-400: color-mix(in srgb, var(--color-accent-2) 68%, white);
+  --color-accent-2-500: var(--color-accent-2);
+  --color-accent-2-600: color-mix(in srgb, var(--color-accent-2) 80%, black);
+  --color-accent-2-700: color-mix(in srgb, var(--color-accent-2) 62%, black);
+  --color-accent-2-800: color-mix(in srgb, var(--color-accent-2) 44%, black);
+  --color-accent-2-900: color-mix(in srgb, var(--color-accent-2) 28%, black);
+  --color-red: #e2685f;
+  --color-red-bg: rgba(226, 104, 95, 0.14);
+  --color-amber: #e0b355;
+  --color-amber-bg: rgba(224, 179, 85, 0.14);
+  --color-green: #6fcf97;
+  --font-heading: "Inter", system-ui, sans-serif;
+  --font-heading-weight: 500;
+  --font-body: "Inter", system-ui, sans-serif;
+  --space-1: 2.4px;
+  --space-2: 4.8px;
+  --space-3: 7px;
+  --space-4: 9.5px;
+  --space-6: 14px;
+  --space-8: 18px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 0 0 1px #3f424d;
+  --shadow-md: 0 0 0 1px #595d6c, 0 6px 18px rgba(0,0,0,0.55);
+  --shadow-lg: 0 0 0 1px #9397ab, 0 16px 40px rgba(0,0,0,0.65);
+}
+* , *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); font-size: 13.5px; line-height: 1.5; font-weight: 400; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2); }
+h1 { font-size: 25px; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+p { margin: 0 0 var(--space-3); }
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; text-decoration: none; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 13px; line-height: 1.2; color: var(--color-text); background: transparent; border: 1px solid transparent; padding: var(--space-2) calc(var(--space-3) * 1.2); border-radius: var(--radius-md); width: 100%; margin-top: var(--space-2); }
+.btn-primary { color: var(--color-accent); border-color: var(--color-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.btn-primary:active { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.field > label { display: block; font-size: 11px; margin-bottom: 4px; color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+.input { width: 100%; min-height: 32px; padding: 5px 9px; font: inherit; font-size: 13px; color: var(--color-text); caret-color: var(--color-accent); background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--radius-md); }
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+.card { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-surface); }
+.card-kicker { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+.card-meta { display: flex; align-items: center; gap: 6px; font-size: 10px; color: color-mix(in srgb, var(--color-text) 50%, transparent); }
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.tag { display: inline-flex; align-items: center; font-size: 10px; letter-spacing: 0.02em; padding: 2px 8px; border-radius: calc(var(--radius-md) * 0.75); }
+.tag-accent { background: var(--color-accent-800); color: var(--color-accent-100); }
+.tag-accent-2 { background: var(--color-accent-2-800); color: var(--color-accent-2-100); }
+.tag-neutral { background: var(--color-neutral-800); color: var(--color-neutral-100); }
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+.tag-red { background: var(--color-red-bg); color: var(--color-red); }
+.tag-amber { background: var(--color-amber-bg); color: var(--color-amber); }
+.nav { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-6); flex-wrap: wrap; }
+.nav-brand { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 16px; margin-right: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.table th { text-align: left; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 60%, transparent); padding: var(--space-2); }
+.table th.num { text-align: right; }
+.table td { padding: var(--space-2); vertical-align: top; }
+.table tbody tr { background: linear-gradient(to right, transparent, color-mix(in srgb, var(--color-text) 8%, transparent) 24px, color-mix(in srgb, var(--color-text) 8%, transparent) calc(100% - 24px), transparent) no-repeat bottom / 100% 1px; }
+.table tbody tr:hover { background: linear-gradient(color-mix(in srgb, var(--color-text) 4%, transparent), color-mix(in srgb, var(--color-text) 4%, transparent)) no-repeat 0 0 / 100% 100%, linear-gradient(to right, transparent, color-mix(in srgb, var(--color-text) 8%, transparent) 24px, color-mix(in srgb, var(--color-text) 8%, transparent) calc(100% - 24px), transparent) no-repeat bottom / 100% 1px; }
+/* ===================== Estilos específicos deste painel ===================== */
+.wrap { max-width: 1180px; margin: 0 auto; }
+.section { padding: var(--space-8) var(--space-6) var(--space-4); max-width: 1180px; margin: 0 auto; }
+.section + .section { border-top: 1px solid var(--color-divider); }
+.section-head { margin-bottom: var(--space-6); }
+.section-head h2 { margin-bottom: var(--space-1); }
+.section-sub { color: color-mix(in srgb, var(--color-text) 55%, transparent); font-size: 12px; }
+.kpi-value { font-size: 21px; font-weight: 500; font-family: var(--font-heading); margin: var(--space-2) 0; white-space: nowrap; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+.split-bar { display: flex; height: 11px; border-radius: var(--radius-sm); overflow: hidden; background: var(--color-neutral-800); }
+.legend-row { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--color-neutral-300); }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.bar-track-mini { height: 5px; border-radius: var(--radius-sm); background: var(--color-neutral-800); overflow: hidden; margin-top: 5px; }
+.bar-fill-mini { height: 100%; border-radius: var(--radius-sm); background: var(--color-accent); }
+@keyframes live-pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55); } 50% { opacity: 0.55; box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); } }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; display: inline-block; animation: live-pulse 1.6s ease-in-out infinite; }
+.donut-wrap:hover .donut-label-default { opacity: 0; }
+.donut-wrap:hover .donut-label-hover { opacity: 1; }
+.donut-label-default, .donut-label-hover { transition: opacity 0.15s ease; }
+.donut-label-hover { opacity: 0; }
+.empty { text-align: center; padding: 50px 18px; color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: var(--space-4); }
+.login-card { width: min(360px, 100%); }
+.login-card h2 { margin-top: 0; }
+.login-card .erro { color: var(--color-red); font-size: 12px; margin-bottom: 4px; }
+@media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+.map-legend-track { flex: 1; height: 7px; border-radius: 4px; background: linear-gradient(90deg, var(--color-neutral-800), var(--color-accent)); }
+.widget-flutuante { position: fixed; bottom: 20px; right: 20px; z-index: 500; }
+.widget-flutuante-botao { width: 44px; height: 44px; border-radius: 50%; background: var(--color-accent-600); color: #fff; border: none; cursor: pointer; box-shadow: var(--shadow-lg); font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.widget-flutuante-botao:hover { background: var(--color-accent-700); }
+.widget-flutuante-painel { display: none; position: absolute; bottom: 52px; right: 0; width: 200px; background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: var(--space-4); }
+.widget-flutuante.aberto .widget-flutuante-painel { display: block; }
+.tema-seletor { position: fixed; top: 12px; right: 12px; z-index: 999; }
+.tema-toggle { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--color-divider); background: var(--color-surface); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+.tema-toggle span { width: 14px; height: 14px; border-radius: 50%; background: var(--color-accent); display: block; }
+.tema-lista { display: none; position: absolute; top: 38px; right: 0; background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: var(--space-3); width: 168px; }
+.tema-seletor.aberto .tema-lista { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.tema-item { width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.tema-item.ativo { border-color: var(--color-text); }
+</style>
+<script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<div class="tema-seletor" id="temaSeletor">
+  <button class="tema-toggle" id="temaToggle" aria-label="Escolher cor do painel" title="Cor do painel"><span></span></button>
+  <div class="tema-lista" id="temaLista"></div>
+</div>
+<script>
+// ================== CONFIGURAÇÃO — só isso precisa ser trocado ==================
+const API_URL = "https://script.google.com/macros/s/AKfycbwR0Avf_mCAERMssJ26PcfCMvgSLDi0DsmKZPqA6bpKwafkEGT7pKG1Xub25NpUbWeCtA/exec";
+// ==================================================================================
+// ================== Temas de cor do painel ==================
+const TEMAS = [
+  { id: 'nocturne',  nome: 'Nocturne (atual)', bg: '#161826', surface: '#232532', text: '#e9e9ed', accent: '#9184d9', accent2: '#a7a1db' },
+  { id: 'grafite',   nome: 'Grafite',          bg: '#17181c', surface: '#212226', text: '#e9eaee', accent: '#4fd1a5', accent2: '#7fe0c0' },
+  { id: 'oliva',     nome: 'Verde-oliva',      bg: '#14170f', surface: '#1f2417', text: '#eef2e6', accent: '#9bc75a', accent2: '#b8dd82' },
+  { id: 'marinho',   nome: 'Azul-marinho',     bg: '#0d1420', surface: '#16223a', text: '#e7eefc', accent: '#4f9ce0', accent2: '#7fb8ea' },
+  { id: 'vinho',     nome: 'Vinho',            bg: '#1c1416', surface: '#271c1f', text: '#f2e9ea', accent: '#e0725a', accent2: '#eb9a86' },
+  { id: 'ardosia',   nome: 'Ardósia',          bg: '#14181f', surface: '#1e242e', text: '#e7ebf0', accent: '#5aa7d8', accent2: '#83c0e5' },
+  { id: 'bege',      nome: 'Bege claro',       bg: '#faf7f2', surface: '#ffffff', text: '#3a2c22', accent: '#c96a3e', accent2: '#dd8c62' },
+  { id: 'lavanda',   nome: 'Branco lavanda',   bg: '#ffffff', surface: '#f7f6fd', text: '#2b2741', accent: '#7f77dd', accent2: '#a39cf0' },
+  { id: 'verdeclaro',nome: 'Cinza-verde claro',bg: '#f6f7f2', surface: '#ffffff', text: '#223018', accent: '#5f8f2e', accent2: '#86b358' },
+  { id: 'ceu',       nome: 'Azul-céu claro',   bg: '#f3f8fd', surface: '#ffffff', text: '#10233a', accent: '#2f7fc2', accent2: '#63a3dd' }
+];
+function aplicarTema(id, salvar){
+  const t = TEMAS.find(x => x.id === id) || TEMAS[0];
+  const r = document.documentElement.style;
+  r.setProperty('--color-bg', t.bg);
+  r.setProperty('--color-surface', t.surface);
+  r.setProperty('--color-text', t.text);
+  r.setProperty('--color-accent', t.accent);
+  r.setProperty('--color-accent-2', t.accent2);
+  document.querySelectorAll('.tema-item').forEach(b => b.classList.toggle('ativo', b.dataset.id === t.id));
+  if (salvar !== false) localStorage.setItem('painel_tema', t.id);
+}
+function montarSeletorTema(){
+  const lista = document.getElementById('temaLista');
+  lista.innerHTML = TEMAS.map(t =>
+    `<button class="tema-item" data-id="${t.id}" title="${t.nome}" style="background:${t.bg}; border-color:${t.accent}"></button>`
+  ).join('');
+  lista.querySelectorAll('.tema-item').forEach(btn => {
+    btn.addEventListener('click', () => aplicarTema(btn.dataset.id));
+  });
+  document.getElementById('temaToggle').addEventListener('click', () => {
+    document.getElementById('temaSeletor').classList.toggle('aberto');
+  });
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('temaSeletor').contains(e.target)) {
+      document.getElementById('temaSeletor').classList.remove('aberto');
+    }
+  });
+}
+montarSeletorTema();
+aplicarTema(localStorage.getItem('painel_tema') || 'nocturne', false);
+// ================================================================
+let dados = null;
+function getSenhaSalva(){ return sessionStorage.getItem('painel_senha') || ''; }
+function salvarSenha(s){ sessionStorage.setItem('painel_senha', s); }
+// ID do visitante — gerado uma vez, guardado no localStorage (diferente
+// do sessionStorage da senha: esse precisa sobreviver entre sessões,
+// pra contar como "o mesmo navegador" da próxima vez que abrir). Não
+// identifica pessoa — identifica navegador/dispositivo, já que todo
+// mundo usa a mesma senha pra entrar.
+function getOuCriarIdVisitante(){
+  let id = localStorage.getItem('painel_id_visitante');
+  if(!id){
+    id = 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('painel_id_visitante', id);
+  }
+  return id;
+}
+// Manda um heartbeat pro servidor ("ainda estou aqui") e atualiza a
+// tag de "vendo agora / únicos" com a resposta. Silencioso em caso de
+// falha — isso é só um contador, não pode travar nem poluir o painel
+// se a rede engasgar num heartbeat isolado.
+function enviarHeartbeat(){
+  const senha = getSenhaSalva();
+  if(!senha) return;
+  const idVisitante = getOuCriarIdVisitante();
+  const nomeCallback = 'jsonp_hb_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+  const script = document.createElement('script');
+  window[nomeCallback] = function(resposta){
+    delete window[nomeCallback];
+    script.remove();
+    const tag = document.getElementById('visitantes-tag');
+    if(!tag || !resposta || resposta.erro) return;
+    tag.textContent = resposta.vendo_agora + ' vendo agora · ' + resposta.visitantes_unicos + ' únicos';
+  };
+  script.src = API_URL + '?senha=' + encodeURIComponent(senha) + '&acao=heartbeat&visitante=' + encodeURIComponent(idVisitante) + '&callback=' + nomeCallback + '&_=' + Date.now();
+  script.onerror = () => { delete window[nomeCallback]; script.remove(); };
+  document.body.appendChild(script);
+}
+function renderLogin(erro){
+  document.getElementById('app').innerHTML = `
+    <div class="login-wrap">
+      <div class="card elev-md login-card">
+        <h2>Painel de Vendas — Vitanuts</h2>
+        ${erro ? '<div class="erro">Senha incorreta.</div>' : ''}
+        <div class="field">
+          <input class="input" type="password" id="senhaInput" placeholder="Senha" autofocus>
+        </div>
+        <button class="btn btn-primary" id="btnEntrar">Entrar</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnEntrar').addEventListener('click', tentarLogin);
+  document.getElementById('senhaInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') tentarLogin();
+  });
+}
+async function tentarLogin(){
+  const senha = document.getElementById('senhaInput').value;
+  await carregarDados(senha, false);
+}
+// ehRefreshDeFundo=true significa "não é o carregamento inicial nem o
+// login" — é o setInterval tentando atualizar sozinho. Nesses casos,
+// uma falha (comum quando a aba fica muito tempo em segundo plano e o
+// navegador atrasa a requisição) não pode apagar o painel que já
+// estava funcionando na tela; só tenta de novo silenciosamente.
+async function carregarDados(senha, ehRefreshDeFundo){
+  const MAX_TENTATIVAS = 3;
+  for(let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++){
+    try {
+      const json = await buscarViaJsonp(API_URL, senha);
+      if(json.erro === 'senha_incorreta'){
+        renderLogin(true);
+        return;
+      }
+      salvarSenha(senha);
+      dados = json;
+      render();
+      enviarHeartbeat(); // primeiro heartbeat assim que os dados carregam (login OK ou sessão já salva)
+      return;
+    } catch(err){
+      const ultimaTentativa = tentativa === MAX_TENTATIVAS;
+      if(!ultimaTentativa){
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
+      }
+      if(ehRefreshDeFundo && dados){
+        console.warn('Refresh automático falhou, mantendo painel atual:', err.message);
+        return;
+      }
+      document.getElementById('app').innerHTML = `<div class="empty"><p>Erro ao buscar dados: ${err.message}</p></div>`;
+    }
+  }
+}
+// Busca os dados via JSONP (uma tag <script> dinâmica) em vez de fetch(),
+// porque o navegador bloqueia fetch() entre domínios diferentes (CORS) —
+// GitHub Pages e Google Apps Script são domínios diferentes. Tags
+// <script> não têm essa restrição.
+function buscarViaJsonp(url, senha){
+  return new Promise((resolve, reject) => {
+    const nomeCallback = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    const script = document.createElement('script');
+    let terminou = false;
+    window[nomeCallback] = function(dados){
+      terminou = true;
+      resolve(dados);
+      delete window[nomeCallback];
+      script.remove();
+    };
+    script.src = url + '?senha=' + encodeURIComponent(senha) + '&callback=' + nomeCallback + '&_=' + Date.now();
+    script.onerror = () => {
+      if(!terminou) reject(new Error('Falha ao carregar dados (verifique a URL da API)'));
+      delete window[nomeCallback];
+      script.remove();
+    };
+    document.body.appendChild(script);
+    setTimeout(() => {
+      if(!terminou){
+        reject(new Error('Tempo esgotado buscando dados'));
+        delete window[nomeCallback];
+        script.remove();
+      }
+    }, 30000);
+  });
+}
+function formatarDataHora(iso){
+  if(!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function formatarDataCurta(iso){
+  if(!iso) return '-';
+  const partes = String(iso).split('-');
+  if(partes.length < 3) return iso;
+  const [ano, mes, dia] = partes;
+  return dia + '/' + mes + '/' + ano;
+}
+function brl(v){ return Number(v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0}); }
+function escapeHtml(str){ const div = document.createElement('div'); div.textContent = str ?? ''; return div.innerHTML; }
+// cores fixas por grupo — mesma paleta em Faturado e Carteira, pra manter
+// o significado consistente entre os dois painéis
+const CORES_GRUPO = {
+  'B2C': 'var(--color-accent-2)',
+  'B2B': 'var(--color-accent)',
+  'Não classificado': 'var(--color-neutral-500)',
+  'Não identificado': 'var(--color-neutral-500)'
+};
+function svgDonut(pct, valorLabel, totalLabel){
+  const r = 70, c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.max(0, Math.min(1, pct)));
+  const pctFmt = (pct*100).toFixed(1).replace('.', ',') + '%';
+  return `
+  <div class="donut-wrap" style="cursor: default;">
+    <svg width="142" height="142" viewBox="0 0 160 160" style="flex-shrink: 0;">
+      <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--color-neutral-800)" stroke-width="18"></circle>
+      <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--color-accent)" stroke-width="18" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 80 80)"></circle>
+      <g class="donut-label-default">
+        <text x="80" y="75" text-anchor="middle" font-family="var(--font-heading)" font-size="26" font-weight="500" fill="var(--color-text)">${pctFmt}</text>
+        <text x="80" y="96" text-anchor="middle" font-family="var(--font-body)" font-size="10.5" letter-spacing="0.04em" fill="var(--color-neutral-400)">DA META</text>
+      </g>
+      <g class="donut-label-hover">
+        <text x="80" y="73" text-anchor="middle" font-family="var(--font-heading)" font-size="16" font-weight="500" fill="var(--color-text)">${escapeHtml(valorLabel)}</text>
+        <text x="80" y="90" text-anchor="middle" font-family="var(--font-body)" font-size="9.5" letter-spacing="0.04em" fill="var(--color-neutral-400)">FATURAMENTO ATUAL</text>
+        <text x="80" y="104" text-anchor="middle" font-family="var(--font-body)" font-size="9.5" letter-spacing="0.04em" fill="var(--color-neutral-400)">de ${escapeHtml(totalLabel)}</text>
+      </g>
+    </svg>
+  </div>`;
+}
+function splitBar(entradas, total){
+  if(entradas.length === 0) return '<p class="text-muted" style="font-size:12px;">Sem dados neste período ainda.</p>';
+  const segmentos = entradas.map(([nome, valor]) => {
+    const pct = total > 0 ? (valor/total*100) : 0;
+    const cor = CORES_GRUPO[nome] || 'var(--color-neutral-500)';
+    return `<div style="width:${pct.toFixed(2)}%;background:${cor};"></div>`;
+  }).join('');
+  const legendas = entradas.map(([nome, valor, extra]) => {
+    const pct = total > 0 ? (valor/total*100) : 0;
+    const cor = CORES_GRUPO[nome] || 'var(--color-neutral-500)';
+    return `<div class="legend-row"><span class="legend-dot" style="background:${cor}"></span>${escapeHtml(nome)} · ${brl(valor)} (${pct.toFixed(1).replace('.',',')}%)${extra ? ' · ' + escapeHtml(extra) : ''}</div>`;
+  }).join('');
+  return `<div class="split-bar" style="margin: var(--space-3) 0;">${segmentos}</div><div style="display:flex;gap:var(--space-6);flex-wrap:wrap;">${legendas}</div>`;
+}
+function rankingTable(lista){
+  if(!lista || lista.length === 0) return '<p class="text-muted" style="font-size:12px;">Sem vendas de produto registradas neste mês ainda.</p>';
+  const maior = lista.length ? lista[0].valor : 1;
+  const total = lista.reduce((s,p)=>s+p.valor,0);
+  const TAG_CANAL = { 'B2C': 'tag-accent-2', 'B2B': 'tag-accent', 'Não classificado': 'tag-neutral' };
+  const linhas = lista.map(p => `
+    <tr>
+      <td>
+        <div style="font-weight:500;">${escapeHtml(p.nome)}</div>
+        <div class="text-muted" style="font-size:10.5px;margin-top:1px;">${escapeHtml(p.sku)}</div>
+        <div class="bar-track-mini"><div class="bar-fill-mini" style="width:${(p.valor/maior*100).toFixed(0)}%"></div></div>
+      </td>
+      <td><span class="tag ${TAG_CANAL[p.canal_predominante] || 'tag-neutral'}">${escapeHtml(p.canal_predominante || '—')}</span></td>
+      <td class="num">${Number(p.quantidade || 0).toLocaleString('pt-BR')}</td>
+      <td class="num">${brl(p.valor)}</td>
+      <td class="num text-muted">${total>0 ? (p.valor/total*100).toFixed(1).replace('.',',') : '0,0'}%</td>
+    </tr>`).join('');
+  return `<table class="table"><thead><tr><th>Produto</th><th>Canal</th><th class="num">Qtd.</th><th class="num">Real R$</th><th class="num">% do top 10</th></tr></thead><tbody>${linhas}</tbody></table>`;
+}
+// Faturamento por UF — barras horizontais, ordenadas do maior pro menor.
+// valorPorCanal: dado um registro de UF ({valor, B2C, B2B, "Não classificado"})
+// e um filtro ('todos'|'B2C'|'B2B'), devolve o número certo.
+function valorRegiaoPorCanal(registro, canal){
+  if(!registro) return 0;
+  if(canal === 'todos') return registro.valor || 0;
+  return registro[canal] || 0;
+}
+function regioesBars(grupoRegioes, canal){
+  const entradas = Object.entries(grupoRegioes || {})
+    .map(([uf, reg]) => [uf, valorRegiaoPorCanal(reg, canal)])
+    .filter(([,v]) => v > 0)
+    .sort((a,b) => b[1]-a[1]);
+  if(entradas.length === 0) return '<p class="text-muted" style="font-size:12px;">Sem dados de região neste período ainda.</p>';
+  const total = entradas.reduce((s,[,v])=>s+v, 0);
+  const maior = entradas[0][1];
+  const linhas = entradas.map(([uf, valor]) => `
+    <div style="display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:var(--space-3);margin-bottom:var(--space-2);">
+      <span style="font-weight:500;font-size:12px;">${escapeHtml(uf)}</span>
+      <div class="bar-track-mini" style="margin-top:0;"><div class="bar-fill-mini" style="width:${(valor/maior*100).toFixed(0)}%"></div></div>
+      <span class="num text-muted" style="font-size:11.5px;white-space:nowrap;">${brl(valor)} · ${total>0 ? (valor/total*100).toFixed(1).replace('.',',') : '0,0'}%</span>
+    </div>`).join('');
+  return linhas;
+}
+// Tendência diária acumulada — linha simples em SVG, sem depender de
+// nenhuma biblioteca de gráfico.
+function tendenciaSvg(serie, metaMes){
+  if(!serie || serie.length === 0) return '<p class="text-muted" style="font-size:12px;">Sem dados suficientes ainda.</p>';
+  const w = 600, h = 140, pad = 8;
+  // escala pelo maior valor da PRÓPRIA série — se escalasse pela meta,
+  // a curva ficava "achatada" perto do fundo sempre que o acumulado
+  // ainda estivesse bem abaixo dela (comum no início do mês).
+  const maiorValor = Math.max(...serie.map(p => p.acumulado), 1);
+  const coordenadas = serie.map((p, i) => {
+    const x = serie.length > 1 ? (i / (serie.length - 1)) * (w - pad*2) + pad : pad;
+    const y = h - pad - (p.acumulado / maiorValor) * (h - pad*2);
+    return { x, y, dia: p.dia, acumulado: p.acumulado };
+  });
+  const pontos = coordenadas.map(c => c.x.toFixed(1) + ',' + c.y.toFixed(1)).join(' ');
+  const ultimo = coordenadas[coordenadas.length - 1];
+  // se a meta estiver acima do topo do gráfico, a linha tracejada fica
+  // "encostada" no topo em vez de sumir pra fora da área visível
+  const yMetaBruto = h - pad - (metaMes / maiorValor) * (h - pad*2);
+  const yMeta = Math.max(pad, yMetaBruto);
+  // pontos invisíveis maiores (mais fáceis de acertar o mouse) em cada
+  // dia, usados só pra mostrar o tooltip com o valor daquele dia
+  const pontosHover = coordenadas.map(c =>
+    `<circle class="ponto-hover" cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="10" fill="transparent" style="cursor:pointer;" data-dia="${c.dia}" data-valor="${c.acumulado}"></circle>`
+  ).join('');
+  return `
+  <svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;">
+    <line x1="${pad}" y1="${yMeta.toFixed(1)}" x2="${w-pad}" y2="${yMeta.toFixed(1)}" stroke="var(--color-neutral-500)" stroke-width="1" stroke-dasharray="4,4"></line>
+    <polyline points="${pontos}" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    <circle cx="${ultimo.x.toFixed(1)}" cy="${ultimo.y.toFixed(1)}" r="3.5" fill="var(--color-accent)"></circle>
+    ${pontosHover}
+  </svg>`;
+}
+// Liga o hover nos pontos do gráfico de tendência — precisa rodar depois
+// que o HTML já está na página (os elementos ainda não existem antes disso).
+function ligarHoverTendencia(){
+  const tooltip = garantirTooltip();
+  document.querySelectorAll('#tendencia-svg-alvo .ponto-hover').forEach(ponto => {
+    ponto.addEventListener('mouseenter', () => {
+      const dia = ponto.getAttribute('data-dia');
+      const valor = Number(ponto.getAttribute('data-valor'));
+      tooltip.textContent = 'Dia ' + dia + ' — ' + brl(valor) + ' acumulado';
+      tooltip.style.display = 'block';
+    });
+    ponto.addEventListener('mousemove', (e) => {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+    });
+    ponto.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+  });
+}
+// Mapa do Brasil por UF — geometria real buscada 1x da API pública do
+// IBGE (não é imagem estática) e reaproveitada nos refreshes seguintes.
+// Se a busca falhar (rede, CORS, IBGE fora do ar), a área do mapa mostra
+// um aviso — mas a lista de barras (sempre renderizada, logo abaixo)
+// nunca depende disso, então a seção nunca fica sem informação nenhuma.
+const UF_PARA_CODIGO_IBGE = { RO:11, AC:12, AM:13, RR:14, PA:15, AP:16, TO:17, MA:21, PI:22, CE:23, RN:24, PB:25, PE:26, AL:27, SE:28, BA:29, MG:31, ES:32, RJ:33, SP:35, PR:41, SC:42, RS:43, MS:50, MT:51, GO:52, DF:53 };
+const CODIGO_IBGE_PARA_UF = Object.fromEntries(Object.entries(UF_PARA_CODIGO_IBGE).map(([uf, cod]) => [cod, uf]));
+let MAPA_GEOMETRIA_CACHE = null; // guarda os paths já buscados, entre refreshes
+let MAPA_CANAL_ATUAL = 'todos'; // estado do filtro de canal do mapa
+function lerpCorMapa(t){
+  const base = [63, 66, 77], alvo = [145, 132, 217];
+  const r = Math.round(base[0] + (alvo[0]-base[0])*t);
+  const g = Math.round(base[1] + (alvo[1]-base[1])*t);
+  const b = Math.round(base[2] + (alvo[2]-base[2])*t);
+  const hex = n => n.toString(16).padStart(2,'0');
+  return '#' + hex(r) + hex(g) + hex(b);
+}
+async function buscarGeometriaMapa(){
+  if(MAPA_GEOMETRIA_CACHE) return MAPA_GEOMETRIA_CACHE;
+  const resp = await fetch('https://servicodados.ibge.gov.br/api/v2/malhas/BR?resolucao=2&formato=application/vnd.geo+json');
+  const geo = await resp.json();
+  const projection = d3.geoMercator().fitSize([680, 560], geo);
+  const pathGen = d3.geoPath().projection(projection);
+  MAPA_GEOMETRIA_CACHE = geo.features.map(f => {
+    const [x, y] = projection(f.properties.centroide);
+    return { codigo: Number(f.properties.codarea), d: pathGen(f), x, y };
+  });
+  return MAPA_GEOMETRIA_CACHE;
+}
+// Tooltip flutuante customizado (em vez do title nativo do navegador,
+// que é feio e não combina com o resto do painel). Um único elemento
+// reaproveitado, reposicionado conforme o mouse se move sobre o SVG.
+function garantirTooltip(){
+  let tt = document.getElementById('painel-tooltip');
+  if(!tt){
+    tt = document.createElement('div');
+    tt.id = 'painel-tooltip';
+    tt.style.cssText = 'position:fixed;pointer-events:none;z-index:1000;background:var(--color-neutral-100);color:var(--color-neutral-900);font-size:11.5px;font-weight:500;padding:5px 9px;border-radius:var(--radius-sm);box-shadow:var(--shadow-md);display:none;white-space:nowrap;';
+    document.body.appendChild(tt);
+  }
+  return tt;
+}
+function renderizarMapaComFiltro(alvoSvg, geometria, grupoRegioes, canal){
+  const valores = {};
+  Object.entries(grupoRegioes || {}).forEach(([uf, reg]) => { valores[uf] = valorRegiaoPorCanal(reg, canal); });
+  const total = Object.values(valores).reduce((s,v)=>s+v, 0);
+  const maior = Math.max(1, ...Object.values(valores));
+  const tooltip = garantirTooltip();
+  alvoSvg.innerHTML = geometria.map(f => {
+    const uf = CODIGO_IBGE_PARA_UF[f.codigo] || '';
+    const valor = valores[uf] || 0;
+    const t = Math.sqrt(valor / maior);
+    const pct = total > 0 ? (valor/total*100) : 0;
+    const nomeUf = escapeHtml(uf || '—');
+    const texto = `${nomeUf} — ${brl(valor)} (${pct.toFixed(1).replace('.',',')}% do total)`;
+    return `<path d="${f.d}" fill="${lerpCorMapa(t)}" stroke="var(--color-bg)" stroke-width="1" style="cursor:pointer;" data-tooltip="${texto.replace(/"/g,'&quot;')}"></path>`;
+  }).join('');
+  alvoSvg.querySelectorAll('path').forEach(path => {
+    path.addEventListener('mouseenter', () => {
+      tooltip.textContent = path.getAttribute('data-tooltip');
+      tooltip.style.display = 'block';
+      path.setAttribute('stroke', 'var(--color-accent)');
+      path.setAttribute('stroke-width', '2');
+    });
+    path.addEventListener('mousemove', (e) => {
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY + 14) + 'px';
+    });
+    path.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+      path.setAttribute('stroke', 'var(--color-bg)');
+      path.setAttribute('stroke-width', '1');
+    });
+  });
+}
+async function tentarRenderizarMapa(grupoRegioes){
+  const alvo = document.getElementById('mapa-svg-alvo');
+  if(!alvo) return; // a página já pode ter sido re-renderizada antes da busca terminar
+  try {
+    const geometria = await buscarGeometriaMapa();
+    const alvoAtual = document.getElementById('mapa-svg-alvo');
+    if(!alvoAtual) return;
+    renderizarMapaComFiltro(alvoAtual, geometria, grupoRegioes, MAPA_CANAL_ATUAL);
+  } catch(err){
+    const alvoAtual = document.getElementById('mapa-svg-alvo');
+    if(alvoAtual) alvoAtual.closest('.mapa-wrap').innerHTML = '<p class="text-muted" style="font-size:12px;">Não foi possível carregar o mapa agora — veja a lista por estado abaixo.</p>';
+    console.warn('Não foi possível carregar o mapa do Brasil:', err.message);
+  }
+}
+// Liga o dropdown de canal — atualiza a LISTA sempre (não depende do
+// mapa ter carregado) e o MAPA quando a geometria já estiver disponível.
+// Fica fora de tentarRenderizarMapa de propósito: se o mapa falhar, o
+// filtro continua funcionando normalmente na lista.
+function ligarFiltroRegioes(grupoRegioes){
+  const select = document.getElementById('mapa-filtro-canal');
+  if(!select || select.dataset.ligado) return;
+  select.dataset.ligado = '1';
+  select.value = MAPA_CANAL_ATUAL;
+  select.addEventListener('change', () => {
+    MAPA_CANAL_ATUAL = select.value;
+    const listaAtual = document.getElementById('regioes-lista-alvo');
+    if(listaAtual) listaAtual.innerHTML = regioesBars(grupoRegioes, MAPA_CANAL_ATUAL);
+    if(MAPA_GEOMETRIA_CACHE){
+      const svgAtual = document.getElementById('mapa-svg-alvo');
+      if(svgAtual) renderizarMapaComFiltro(svgAtual, MAPA_GEOMETRIA_CACHE, grupoRegioes, MAPA_CANAL_ATUAL);
+    }
+    const rotulo = document.getElementById('mapa-status-label');
+    if(rotulo) rotulo.textContent = 'Coloração por faturamento — ' + (MAPA_CANAL_ATUAL === 'todos' ? 'Todos os canais' : MAPA_CANAL_ATUAL);
+  });
+}
+// Entrada de pedidos — pedidos em aberto/em digitação (carteira), pelo
+// dia em que caíram, separados por B2C/B2B. Reaproveita o kpiCard() já
+// usado na Visão Geral, montando 2 cards (um por canal) pro dia
+// escolhido no filtro.
+function entradaPedidosCardsHtml(registro){
+  if(!registro){
+    return '<p class="text-muted" style="font-size:12px;">Sem pedidos lançados nesse dia.</p>';
+  }
+  const qtdB2C = registro.B2C ? registro.B2C.qtd : 0;
+  const valorB2C = registro.B2C ? registro.B2C.valor : 0;
+  const qtdB2B = registro.B2B ? registro.B2B.qtd : 0;
+  const valorB2B = registro.B2B ? registro.B2B.valor : 0;
+  return (
+    kpiCard('Entrada B2C', String(qtdB2C) + (qtdB2C === 1 ? ' pedido' : ' pedidos'), brl(valorB2C), 'tag-accent-2') +
+    kpiCard('Entrada B2B', String(qtdB2B) + (qtdB2B === 1 ? ' pedido' : ' pedidos'), brl(valorB2B), 'tag-accent')
+  );
+}
+function ligarFiltroEntradaPedidos(lista){
+  const select = document.getElementById('entrada-filtro-data');
+  const alvo = document.getElementById('entrada-cards-alvo');
+  if(!select || !alvo) return;
+  if(!lista || lista.length === 0){
+    select.innerHTML = '';
+    alvo.innerHTML = '<p class="text-muted" style="font-size:12px;">Sem pedidos na carteira ainda.</p>';
+    return;
+  }
+  select.innerHTML = lista.map(r => `<option value="${escapeHtml(r.data)}">${formatarDataCurta(r.data)}</option>`).join('');
+  select.value = lista[0].data;
+  function atualizar(){
+    const registro = lista.find(r => r.data === select.value);
+    alvo.innerHTML = entradaPedidosCardsHtml(registro);
+  }
+  // remove listener antigo (se já tinha sido ligado num render anterior)
+  // clonando o nó — mais simples do que guardar referência da função.
+  const novoSelect = select.cloneNode(true);
+  select.parentNode.replaceChild(novoSelect, select);
+  novoSelect.addEventListener('change', () => {
+    const registro = lista.find(r => r.data === novoSelect.value);
+    alvo.innerHTML = entradaPedidosCardsHtml(registro);
+  });
+  atualizar();
+}
+// Widget flutuante — mostra o faturamento de um dia específico do mês,
+// filtrado por canal. Só usa o array faturamento_por_dia que já veio
+// junto com o resto dos dados — nenhuma busca nova.
+function widgetFaturamentoPorDiaHtml(){
+  return `
+  <div class="widget-flutuante" id="widget-flutuante">
+    <div class="widget-flutuante-painel">
+      <div class="card-kicker" style="margin-bottom:var(--space-3);">Faturamento por dia</div>
+      <div class="field" style="margin-bottom:var(--space-3);">
+        <label for="widget-dia">Dia</label>
+        <select class="input" id="widget-dia"></select>
+      </div>
+      <div class="field" style="margin-bottom:var(--space-3);">
+        <label for="widget-canal">Canal</label>
+        <select class="input" id="widget-canal">
+          <option value="total">Geral</option>
+          <option value="B2B">B2B</option>
+          <option value="B2C">B2C</option>
+        </select>
+      </div>
+      <div class="kpi-value" id="widget-valor" style="font-size:18px;">R$ 0</div>
+    </div>
+    <button class="widget-flutuante-botao" id="widget-flutuante-botao" title="Faturamento por dia">📅</button>
+  </div>`;
+}
+function ligarWidgetFaturamentoPorDia(porDia){
+  const wrap = document.getElementById('widget-flutuante');
+  const botao = document.getElementById('widget-flutuante-botao');
+  const selectDia = document.getElementById('widget-dia');
+  const selectCanal = document.getElementById('widget-canal');
+  const valorEl = document.getElementById('widget-valor');
+  if(!wrap || !botao || !selectDia || !selectCanal || !valorEl) return;
+  botao.addEventListener('click', () => wrap.classList.toggle('aberto'));
+  selectDia.innerHTML = porDia.map(d => `<option value="${d.dia}">Dia ${d.dia}</option>`).join('');
+  if(porDia.length > 0) selectDia.value = String(porDia[porDia.length-1].dia);
+  function atualizarValor(){
+    const diaEscolhido = Number(selectDia.value);
+    const canalEscolhido = selectCanal.value; // 'total' | 'B2B' | 'B2C'
+    const registro = porDia.find(d => d.dia === diaEscolhido);
+    valorEl.textContent = brl(registro ? (registro[canalEscolhido] || 0) : 0);
+  }
+  selectDia.addEventListener('change', atualizarValor);
+  selectCanal.addEventListener('change', atualizarValor);
+  atualizarValor();
+}
+function kpiCard(label, value, tagText, tagClass, statusDot){
+  const dot = statusDot ? `<span style="width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;background:${statusDot};"></span>` : '';
+  return `
+  <div class="card elev-sm">
+    <div class="card-kicker" style="display:flex;align-items:center;">${dot}${escapeHtml(label)}</div>
+    <div class="kpi-value">${value}</div>
+    ${tagText ? `<span class="tag ${tagClass}">${escapeHtml(tagText)}</span>` : ''}
+  </div>`;
+}
+function render(){
+  if(!dados || dados.erro){
+    document.getElementById('app').innerHTML = '<div class="empty"><p>Ainda não há dados sincronizados. Aguarde o primeiro ciclo automático (roda a cada 15 min).</p></div>';
+    return;
+  }
+  const metaMes = Number(dados.meta_mes || 200000);
+  const faturamentoReal = Number(dados.faturamento_real || 0);
+  const carteiraValor = Number((dados.carteira && dados.carteira.valor_total) || 0);
+  const tendencia = Number(dados.tendencia || 0);
+  const clientesPositivados = Number(dados.clientes_positivados || 0);
+  const valorAmostras = Number(dados.valor_amostras || 0);
+  const qtdNotasAmostra = Number(dados.qtd_notas_amostra || 0);
+  const gapMeta = Math.max(metaMes - faturamentoReal, 0);
+  const realMaisCarteira = faturamentoReal + carteiraValor;
+  const gapCarteira = Math.max(metaMes - realMaisCarteira, 0);
+  const pctRealizado = metaMes > 0 ? Math.min(faturamentoReal / metaMes, 1) : 0;
+  const tendenciaB2C = Number(dados.tendencia_b2c || 0);
+  const tendenciaB2B = Number(dados.tendencia_b2b || 0);
+  const clientesPorCanal = dados.clientes_positivados_por_canal || {};
+  const porDia = dados.faturamento_por_dia || [];
+  const hojeDado = porDia.length > 0 ? porDia[porDia.length-1] : { total:0, B2C:0, B2B:0 };
+  const ontemDado = porDia.length > 1 ? porDia[porDia.length-2] : null;
+  const grupoFaturado = dados.grupo_faturado || {};
+  const grupoCarteira = (dados.carteira && dados.carteira.grupo) || {};
+  const entradaPedidosPorDia = dados.entrada_pedidos_por_dia || [];
+  const avisoSync = dados.sincronizacao_completa === false
+    ? `<span class="tag tag-amber" style="margin-bottom:12px;display:inline-block;">Sincronizando histórico do mês: ${dados.notas_com_itens_processados}/${dados.total_notas} notas processadas</span><br>`
+    : '';
+  const debugCarteira = dados.carteira && dados.carteira.debug;
+  const avisoCarteira = ((dados.carteira && dados.carteira.total_pedidos) === 0 && debugCarteira && debugCarteira.erro_http)
+    ? `<span class="tag tag-red" style="margin-bottom:12px;display:inline-block;">Carteira não carregou: erro ${debugCarteira.erro_http.status} ao buscar pedidos no Bling</span><br>`
+    : '';
+  document.getElementById('app').innerHTML = `
+    <nav class="nav">
+      <span class="nav-brand">Vitanuts</span>
+      <span class="text-muted" style="font-size:11.5px;">Painel de Vendas</span>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:var(--space-3);">
+        <span class="text-muted" style="font-size:11px;">Atualizado em ${formatarDataHora(dados.gerado_em)}</span>
+        <span class="tag tag-outline" style="display:flex;align-items:center;gap:var(--space-2);"><span class="live-dot"></span>${dados.total_notas} notas no período</span>
+        <span class="tag tag-neutral" id="visitantes-tag">…</span>
+      </span>
+    </nav>
+    <section class="section">
+      <div class="section-head">
+        <div class="card-kicker" style="opacity:0.7;">Visão geral</div>
+        <h2>Faturamento do mês</h2>
+        <p class="section-sub">${dados.periodo_inicio} a ${dados.periodo_fim}</p>
+      </div>
+      ${avisoSync}${avisoCarteira}
+      <div class="card elev-md" style="margin-bottom: var(--space-4); display: grid; grid-template-columns: auto 1px 1fr; align-items: center; gap: var(--space-8); padding: var(--space-8);">
+        ${svgDonut(pctRealizado, brl(faturamentoReal), brl(metaMes))}
+        <div style="width: 1px; height: 84px; background: var(--color-divider);"></div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6);">
+          <div>
+            <div class="card-kicker" style="display:flex;align-items:center;gap:var(--space-2);"><span style="width:8px;height:8px;border-radius:50%;background:${faturamentoReal>=metaMes?'var(--color-green)':'var(--color-red)'};display:inline-block;"></span>Faturamento real</div>
+            <div class="kpi-value">${brl(faturamentoReal)}</div>
+            <span class="tag tag-outline">${(pctRealizado*100).toFixed(1).replace('.',',')}% da meta</span>
+          </div>
+          <div>
+            <div class="card-kicker">Meta do mês</div>
+            <div class="kpi-value">${brl(metaMes)}</div>
+            <span class="tag tag-neutral">fixa por enquanto</span>
+          </div>
+          <div>
+            <div class="card-kicker" style="display:flex;align-items:center;gap:var(--space-2);"><span style="width:8px;height:8px;border-radius:50%;background:var(--color-red);display:inline-block;"></span>Gap até a meta</div>
+            <div class="kpi-value">${brl(gapMeta)}</div>
+            <span class="tag tag-red">${(100-pctRealizado*100).toFixed(1).replace('.',',')}% faltando</span>
+          </div>
+        </div>
+      </div>
+      <div class="card elev-sm" style="margin-bottom: var(--space-4);">
+        <div class="card-kicker">Entrada de pedidos</div>
+        <p class="text-muted" style="font-size:12px;margin:2px 0 0;">Todos os pedidos do mês atual, agrupados pelo dia em que caíram — qualquer status, mesmo já atendidos</p>
+        <div class="field" style="max-width: 200px; margin: var(--space-3) 0;">
+          <label for="entrada-filtro-data">Dia</label>
+          <select class="input" id="entrada-filtro-data"></select>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns: repeat(2, 1fr);" id="entrada-cards-alvo"></div>
+      </div>
+      <div class="kpi-grid">
+        ${kpiCard('Carteira em aberto', brl(carteiraValor), dados.carteira ? dados.carteira.total_pedidos + ' pedidos' : '-', 'tag-neutral')}
+        ${kpiCard('Real + carteira', brl(realMaisCarteira), (metaMes>0 ? ((realMaisCarteira/metaMes)*100).toFixed(1).replace('.',',') : '0') + '% da meta se fechar tudo', 'tag-accent')}
+        ${kpiCard('Tendência de fechamento', brl(tendencia), (metaMes>0 ? ((tendencia/metaMes)*100).toFixed(1).replace('.',',') : '0') + '% da meta projetada', tendencia>=metaMes ? 'tag-accent' : 'tag-red')}
+        ${kpiCard('Clientes positivados', String(clientesPositivados), 'no mês', 'tag-neutral')}
+        ${kpiCard('Tendência B2C', brl(tendenciaB2C), 'projeção de fim de mês', 'tag-accent-2')}
+        ${kpiCard('Tendência B2B', brl(tendenciaB2B), 'projeção de fim de mês', 'tag-accent')}
+        ${kpiCard('Clientes positivados B2C', String(clientesPorCanal.B2C || 0), 'no mês', 'tag-accent-2')}
+        ${kpiCard('Clientes positivados B2B', String(clientesPorCanal.B2B || 0), 'no mês', 'tag-accent')}
+      </div>
+      <div class="card elev-sm" style="margin-top: var(--space-4);">
+        <div class="card-kicker">Faturamento diário</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);margin-top:var(--space-2);">
+          <div>
+            <div class="text-muted" style="font-size:11px;">Hoje</div>
+            <div class="kpi-value" style="font-size:19px;">${brl(hojeDado.total)}</div>
+            <div style="font-size:11px;color:var(--color-neutral-400);margin-top:2px;">B2C: ${brl(hojeDado.B2C)} · B2B: ${brl(hojeDado.B2B)}</div>
+          </div>
+          <div>
+            <div class="text-muted" style="font-size:11px;">Ontem</div>
+            <div class="kpi-value" style="font-size:19px;">${ontemDado ? brl(ontemDado.total) : '—'}</div>
+            <div style="font-size:11px;color:var(--color-neutral-400);margin-top:2px;">${ontemDado ? ('B2C: ' + brl(ontemDado.B2C) + ' · B2B: ' + brl(ontemDado.B2B)) : 'Mês começou hoje'}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section" id="faturado">
+      <div class="section-head">
+        <div class="card-kicker" style="opacity:0.7;">Faturado</div>
+        <h2>B2C × B2B</h2>
+        <p class="section-sub">Divisão do faturamento real do mês por classificação da nota${valorAmostras > 0 ? ` — não inclui ${brl(valorAmostras)} em ${qtdNotasAmostra} nota(s) de amostra/divulgação` : ''}</p>
+      </div>
+      <div class="card elev-sm">
+        ${splitBar(
+          Object.entries(grupoFaturado)
+            .filter(([,v]) => v.valor > 0 || v.clientes > 0)
+            .map(([nome, v]) => [nome, v.valor, v.clientes + ' clientes']),
+          Object.values(grupoFaturado).reduce((s,v)=>s+v.valor,0)
+        )}
+      </div>
+    </section>
+    <section class="section" id="carteira">
+      <div class="section-head">
+        <div class="card-kicker" style="opacity:0.7;">Carteira</div>
+        <h2>Pedidos em aberto — B2C × B2B</h2>
+        <p class="section-sub">Divisão dos pedidos ainda não faturados por tipo de cliente</p>
+      </div>
+      <div class="card elev-sm">
+        ${splitBar(
+          Object.entries(grupoCarteira).filter(([,v]) => v > 0),
+          Object.values(grupoCarteira).reduce((s,v)=>s+v,0)
+        )}
+      </div>
+    </section>
+    <section class="section" id="tendencia">
+      <div class="section-head">
+        <div class="card-kicker" style="opacity:0.7;">Tendência</div>
+        <h2>Faturamento acumulado no mês</h2>
+        <p class="section-sub">Soma dia a dia desde o dia 1 — a linha tracejada é a meta do mês</p>
+      </div>
+      <div class="card elev-sm" id="tendencia-svg-alvo">
+        ${tendenciaSvg(dados.tendencia_diaria, metaMes)}
+      </div>
+    </section>
+    <section class="section" id="produtos">
+      <div class="section-head">
+        <div class="card-kicker" style="opacity:0.7;">Produtos</div>
+        <h2>Ranking por faturamento real</h2>
+        <p class="section-sub">Quem está puxando o resultado do mês — top 10, com quantidade e canal predominante</p>
+      </div>
+      <div class="card elev-sm">
+        ${rankingTable(dados.ranking_produtos)}
+      </div>
+    </section>
+    <section class="section" id="regioes">
+      <div class="section-head">
+        <div class="card-kicker" style="opacity:0.7;">Regiões</div>
+        <h2>Faturamento por estado</h2>
+        <p class="section-sub">Passe o mouse sobre um estado pra ver o valor e a participação (%) no total do canal selecionado</p>
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-4);margin-bottom:var(--space-3);flex-wrap:wrap;">
+        <div class="field" style="margin:0;max-width:200px;">
+          <label for="mapa-filtro-canal">Canal</label>
+          <select class="input" id="mapa-filtro-canal">
+            <option value="todos">Todos</option>
+            <option value="B2C">B2C</option>
+            <option value="B2B">B2B</option>
+          </select>
+        </div>
+        <span class="tag tag-outline" id="mapa-status-label">Coloração por faturamento — Todos os canais</span>
+      </div>
+      <div class="card elev-sm mapa-wrap" style="padding: var(--space-6); margin-bottom: var(--space-4);">
+        <div style="width:100%;max-width:460px;margin:0 auto;">
+          <svg id="mapa-svg-alvo" width="100%" height="380" viewBox="0 0 680 560" style="display:block;">
+            <text x="340" y="280" text-anchor="middle" font-size="12" fill="var(--color-neutral-500)">Carregando mapa…</text>
+          </svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);font-size:11px;color:var(--color-neutral-400);">
+          <span>Menor volume</span>
+          <div class="map-legend-track"></div>
+          <span>Maior volume</span>
+        </div>
+      </div>
+      <div class="card-kicker" style="margin-bottom:var(--space-2);">Lista por estado</div>
+      <div class="card elev-sm" id="regioes-lista-alvo">
+        ${regioesBars(dados.grupo_regioes, MAPA_CANAL_ATUAL)}
+      </div>
+    </section>
+    ${widgetFaturamentoPorDiaHtml()}
+  `;
+  // liga o filtro de canal (afeta mapa E lista), o filtro de entrada de
+  // pedidos, o hover do gráfico de tendência, o widget flutuante de
+  // faturamento por dia e, separadamente, tenta desenhar o mapa do
+  // Brasil de verdade por cima do placeholder — se falhar (rede, IBGE
+  // fora do ar), mostra um aviso só na área do mapa; o resto continua
+  // funcionando normalmente.
+  ligarFiltroRegioes(dados.grupo_regioes);
+  ligarFiltroEntradaPedidos(entradaPedidosPorDia);
+  ligarHoverTendencia();
+  ligarWidgetFaturamentoPorDia(porDia);
+  tentarRenderizarMapa(dados.grupo_regioes);
+}
+// inicialização: usa senha salva na sessão, se tiver; senão mostra login
+const senhaSalva = getSenhaSalva();
+if(senhaSalva){
+  carregarDados(senhaSalva, false);
+} else {
+  renderLogin(false);
+}
+// re-busca os dados a cada 5 minutos, sem precisar recarregar a página
+setInterval(() => {
+  const s = getSenhaSalva();
+  if(s) carregarDados(s, true);
+}, 5 * 60 * 1000);
+// heartbeat de presença a cada 45s, enquanto a aba estiver aberta com
+// sessão válida — é o que mantém o "vendo agora" atualizado
+setInterval(() => {
+  if(getSenhaSalva()) enviarHeartbeat();
+}, 45 * 1000);
+</script>
+</body>
+</html>
