@@ -332,6 +332,17 @@ function formatarDataCurta(iso){
 }
 function brl(v){ return Number(v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0}); }
 function escapeHtml(str){ const div = document.createElement('div'); div.textContent = str ?? ''; return div.innerHTML; }
+// nomes de mês em pt-BR pra rotular o card de "fechamento do mês anterior" —
+// evita depender de Intl/locale do navegador do usuário
+const NOMES_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function labelMesAnterior(periodoInicioIso){
+  const partes = String(periodoInicioIso || '').split('-');
+  if(partes.length < 2) return 'Mês anterior';
+  const ano = partes[0];
+  const mesIndex = Number(partes[1]) - 1;
+  const nomeMes = NOMES_MESES[mesIndex] || '';
+  return nomeMes + '/' + ano;
+}
 // cores fixas por grupo — mesma paleta em Faturado e Carteira, pra manter
 // o significado consistente entre os dois painéis
 const CORES_GRUPO = {
@@ -709,6 +720,30 @@ function render(){
   const avisoCarteira = ((dados.carteira && dados.carteira.total_pedidos) === 0 && debugCarteira && debugCarteira.erro_http)
     ? `<span class="tag tag-red" style="margin-bottom:12px;display:inline-block;">Carteira não carregou: erro ${debugCarteira.erro_http.status} ao buscar pedidos no Bling</span><br>`
     : '';
+
+  // Card "Fechamento do mês anterior" — pedido do gestor no 1º dia do
+  // mês ("quanto fechamos no mês passado?"). O backend (Code.gs) manda
+  // isso já pronto em dados.fechamento_mes_anterior: {completo:true,
+  // valor, total_notas, periodo_inicio, periodo_fim, ...} quando já
+  // processou o mês inteiro, ou {completo:false, periodo_inicio,
+  // periodo_fim} enquanto ainda está buscando o detalhe das notas
+  // (normalmente completa sozinho em até 1-2 ciclos de 15 min).
+  const fechamentoAnterior = dados.fechamento_mes_anterior || null;
+  const fechamentoAnteriorHtml = fechamentoAnterior ? `
+      <div class="card elev-sm" style="margin-bottom: var(--space-4);">
+        <div class="card-kicker" style="display:flex;align-items:center;gap:var(--space-2);">
+          <span style="width:8px;height:8px;border-radius:50%;background:${fechamentoAnterior.completo ? 'var(--color-green)' : 'var(--color-neutral-400)'};display:inline-block;"></span>
+          Fechamento de ${labelMesAnterior(fechamentoAnterior.periodo_inicio)}
+        </div>
+        ${fechamentoAnterior.completo ? `
+          <div class="kpi-value">${brl(fechamentoAnterior.valor)}</div>
+          <span class="tag tag-neutral">${fechamentoAnterior.total_notas} nota(s) faturada(s)</span>
+        ` : `
+          <div class="kpi-value" style="color:var(--color-neutral-400);">Calculando…</div>
+          <span class="tag tag-neutral">${fechamentoAnterior.periodo_inicio} a ${fechamentoAnterior.periodo_fim}</span>
+        `}
+      </div>` : '';
+
   document.getElementById('app').innerHTML = `
     <nav class="nav">
       <span class="nav-brand">Vitanuts</span>
@@ -720,6 +755,7 @@ function render(){
       </span>
     </nav>
     <section class="section">
+      ${fechamentoAnteriorHtml}
       <div class="section-head">
         <div class="card-kicker" style="opacity:0.7;">Visão geral</div>
         <h2>Faturamento do mês</h2>
