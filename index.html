@@ -146,6 +146,14 @@ p { margin: 0 0 var(--space-3); }
 .loc-passo { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); font-size: 12px; color: color-mix(in srgb, var(--color-text) 75%, transparent); }
 .loc-passo:last-child { margin-bottom: 0; }
 .loc-passo-num { font-size: 11px; background: var(--color-surface); border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-neutral-400); }
+.tag-externo-alerta { cursor: pointer; background: var(--color-red-bg); color: var(--color-red); border: 1px solid var(--color-red); }
+.externos-popover-wrap { position: relative; display: inline-flex; }
+.externos-popover { display: none; position: absolute; top: 26px; right: 0; width: 260px; background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: var(--space-4); z-index: 600; text-align: left; }
+.externos-popover.aberto { display: block; }
+.externo-item { padding: var(--space-2) 0; border-bottom: 1px solid var(--color-divider); }
+.externo-item:last-child { border-bottom: none; }
+.externo-item a { color: var(--color-accent); text-decoration: none; font-size: 11.5px; }
+.externo-item a:hover { text-decoration: underline; }
 </style>
 <script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
 </head>
@@ -252,6 +260,11 @@ function obterLocalizacao(){
   });
 }
 
+// Guarda a última lista de externos ativos recebida do servidor, pra
+// montar o popover quando a pessoa clicar na tag — sem precisar de uma
+// chamada extra só pra isso (o heartbeat já traz esse detalhe junto).
+let ULTIMOS_EXTERNOS_ATIVOS = [];
+
 // Manda um heartbeat pro servidor ("ainda estou aqui") e atualiza a
 // tag de "vendo agora / únicos / externo" com a resposta. Silencioso em
 // caso de falha — isso é só um contador, não pode travar nem poluir o
@@ -273,8 +286,12 @@ function enviarHeartbeat(){
       script.remove();
       const tag = document.getElementById('visitantes-tag');
       if(!tag || !resposta || resposta.erro) return;
-      const sufixoExterno = resposta.vendo_agora_externo > 0 ? ' · ' + resposta.vendo_agora_externo + ' externo' : '';
-      tag.textContent = resposta.vendo_agora + ' vendo agora · ' + resposta.visitantes_unicos + ' únicos' + sufixoExterno;
+      const temExterno = resposta.vendo_agora_externo > 0;
+      tag.textContent = resposta.vendo_agora + ' vendo agora · ' + resposta.visitantes_unicos + ' únicos' + (temExterno ? ' · ' + resposta.vendo_agora_externo + ' externo' : '');
+      tag.classList.toggle('tag-externo-alerta', temExterno);
+      tag.classList.toggle('tag-neutral', !temExterno);
+      ULTIMOS_EXTERNOS_ATIVOS = resposta.externos_ativos || [];
+      atualizarPopoverExternos();
     };
     let url = API_URL + '?senha=' + encodeURIComponent(senha) + '&acao=heartbeat&visitante=' + encodeURIComponent(idVisitante) + '&callback=' + nomeCallback + '&_=' + Date.now();
     if(GEO_ATUAL){
@@ -283,6 +300,49 @@ function enviarHeartbeat(){
     script.src = url;
     script.onerror = () => { delete window[nomeCallback]; script.remove(); };
     document.body.appendChild(script);
+  });
+}
+// Monta o conteúdo do popover a partir de ULTIMOS_EXTERNOS_ATIVOS — cada
+// item é um acesso externo ativo, com distância do escritório e um link
+// direto pro Google Maps daquele ponto (basta lat/lng, não precisa de
+// chave de API nenhuma pra esse tipo de link). "há X min" calculado no
+// próprio navegador a partir de ultima_vez (ISO), sem depender do
+// servidor mandar isso já pronto.
+function atualizarPopoverExternos(){
+  const pop = document.getElementById('externos-popover');
+  if(!pop) return;
+  if(ULTIMOS_EXTERNOS_ATIVOS.length === 0){
+    pop.innerHTML = '<p class="text-muted" style="font-size:12px;margin:0;">Nenhum acesso externo agora.</p>';
+    return;
+  }
+  const agora = Date.now();
+  pop.innerHTML = ULTIMOS_EXTERNOS_ATIVOS.map(ext => {
+    const minutos = Math.max(0, Math.round((agora - new Date(ext.ultima_vez).getTime()) / 60000));
+    const linkMaps = 'https://www.google.com/maps?q=' + ext.lat + ',' + ext.lng;
+    return `<div class="externo-item">
+      <div style="font-size:12.5px;font-weight:500;">${Math.round(ext.distancia_metros).toLocaleString('pt-BR')} m do escritório</div>
+      <div class="text-muted" style="font-size:11px;margin-bottom:4px;">há ${minutos} min</div>
+      <a href="${linkMaps}" target="_blank" rel="noopener">Abrir no Google Maps ↗</a>
+    </div>`;
+  }).join('');
+}
+let LISTENER_CLIQUE_FORA_EXTERNOS_LIGADO = false;
+function ligarTogglePopoverExternos(){
+  const tag = document.getElementById('visitantes-tag');
+  if(!tag || tag.dataset.ligado) return;
+  tag.dataset.ligado = '1';
+  tag.addEventListener('click', () => {
+    if(!tag.classList.contains('tag-externo-alerta')) return; // sem externo agora, não abre nada
+    document.getElementById('externos-popover').classList.toggle('aberto');
+  });
+  if(LISTENER_CLIQUE_FORA_EXTERNOS_LIGADO) return;
+  LISTENER_CLIQUE_FORA_EXTERNOS_LIGADO = true;
+  document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.externos-popover-wrap');
+    if(wrap && !wrap.contains(e.target)){
+      const pop = document.getElementById('externos-popover');
+      if(pop) pop.classList.remove('aberto');
+    }
   });
 }
 function renderLogin(erro){
@@ -846,7 +906,10 @@ function render(){
       <span style="margin-left:auto;display:flex;align-items:center;gap:var(--space-3);">
         <span class="text-muted" style="font-size:11px;">Atualizado em ${formatarDataHora(dados.gerado_em)}</span>
         <span class="tag tag-outline" style="display:flex;align-items:center;gap:var(--space-2);"><span class="live-dot"></span>${dados.total_notas} notas no período</span>
-        <span class="tag tag-neutral" id="visitantes-tag">…</span>
+        <span class="externos-popover-wrap">
+          <span class="tag tag-neutral" id="visitantes-tag">…</span>
+          <div class="externos-popover" id="externos-popover"></div>
+        </span>
       </span>
     </nav>
     <section class="section">
@@ -1007,6 +1070,7 @@ function render(){
   ligarFiltroEntradaPedidos(entradaPedidosPorDia);
   ligarHoverTendencia();
   ligarWidgetFaturamentoPorDia(porDia);
+  ligarTogglePopoverExternos();
   tentarRenderizarMapa(dados.grupo_regioes);
 }
 // inicialização: usa senha salva na sessão, se tiver; senão mostra login
