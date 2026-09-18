@@ -166,6 +166,13 @@ p { margin: 0 0 var(--space-3); }
 <script>
 // ================== CONFIGURAÇÃO — só isso precisa ser trocado ==================
 const API_URL = "https://script.google.com/macros/s/AKfycbwR0Avf_mCAERMssJ26PcfCMvgSLDi0DsmKZPqA6bpKwafkEGT7pKG1Xub25NpUbWeCtA/exec";
+// Versão deste arquivo (18/09/2026) — TEM que ser exatamente igual à
+// VERSAO_PAINEL do Code.gs. Comparada a cada heartbeat: se o backend
+// devolver uma versão diferente desta, a aba força um reload sozinha —
+// é o que resolve o problema de aba antiga (aberta antes de uma
+// atualização) continuar rodando código velho pra sempre sem ninguém
+// perceber. Sempre que mudar esse valor aqui, mude também no Code.gs.
+const VERSAO_PAINEL_LOCAL = "2026-09-18b";
 // ==================================================================================
 // ================== Temas de cor do painel ==================
 const TEMAS = [
@@ -284,8 +291,21 @@ function enviarHeartbeat(){
     window[nomeCallback] = function(resposta){
       delete window[nomeCallback];
       script.remove();
+      if(!resposta || resposta.erro) return;
+      // Checagem de versão (18/09/2026) — ANTES de qualquer outra coisa.
+      // Se o backend está numa versão diferente da que esta aba carregou,
+      // essa aba está rodando código desatualizado (provavelmente aberta
+      // antes da última atualização, sem nunca ter dado F5). Força um
+      // reload com cache-busting (query string nova, não location.reload()
+      // puro, que em alguns navegadores pode servir do cache) — a pessoa
+      // perde o que estava vendo na tela por um instante, mas passa a
+      // rodar a versão certa sem precisar perceber ou fazer nada.
+      if(resposta.versao && resposta.versao !== VERSAO_PAINEL_LOCAL){
+        window.location.href = window.location.pathname + '?_forcado=' + Date.now();
+        return;
+      }
       const tag = document.getElementById('visitantes-tag');
-      if(!tag || !resposta || resposta.erro) return;
+      if(!tag) return;
       const temExterno = resposta.vendo_agora_externo > 0;
       tag.textContent = resposta.vendo_agora + ' vendo agora · ' + resposta.visitantes_unicos + ' únicos' + (temExterno ? ' · ' + resposta.vendo_agora_externo + ' externo' : '');
       tag.classList.toggle('tag-externo-alerta', temExterno);
