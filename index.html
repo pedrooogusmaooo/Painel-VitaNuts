@@ -138,6 +138,14 @@ p { margin: 0 0 var(--space-3); }
 .tema-seletor.aberto .tema-lista { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
 .tema-item { width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
 .tema-item.ativo { border-color: var(--color-text); }
+/* ===================== Tela de localização (17/09/2026) ===================== */
+.loc-icone-wrap { width: 44px; height: 44px; border-radius: 50%; background: var(--color-bg); border: 1px solid var(--color-divider); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); font-size: 20px; }
+.loc-icone-wrap.loc-erro { background: var(--color-red-bg); }
+.loc-aviso-box { text-align: left; background: var(--color-bg); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: var(--space-4); margin: var(--space-4) 0; }
+.loc-aviso-titulo { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; font-weight: 500; margin-bottom: var(--space-2); }
+.loc-passo { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); font-size: 12px; color: color-mix(in srgb, var(--color-text) 75%, transparent); }
+.loc-passo:last-child { margin-bottom: 0; }
+.loc-passo-num { font-size: 11px; background: var(--color-surface); border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-neutral-400); }
 </style>
 <script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
 </head>
@@ -211,35 +219,87 @@ function getOuCriarIdVisitante(){
   }
   return id;
 }
+// ================== Localização (17/09/2026) ==================
+// GEO_ATUAL guarda a última posição capturada nesta aba — em memória
+// só, nunca salva em localStorage/sessionStorage (é reobtida a cada
+// carregamento de página e a cada heartbeat; não precisa persistir
+// entre sessões, e persistir localização não traz benefício nenhum
+// aqui, só risco de guardar dado sensível à toa).
+let GEO_ATUAL = null;
+
+// Promise em cima de navigator.geolocation.getCurrentPosition — como o
+// pedido é que o painel só abra COM localização, essa função é chamada
+// antes de buscar qualquer dado, não só no heartbeat. timeout curto (8s)
+// porque isso acontece na tela de entrada, com a pessoa esperando —
+// se o GPS/Wi-Fi demorar mais que isso, melhor mostrar a tela de
+// "recusado/falhou" do que deixar a pessoa olhando pra tela travada.
+function obterLocalizacao(){
+  return new Promise((resolve, reject) => {
+    if(!navigator.geolocation){
+      reject(new Error('geolocalizacao_indisponivel'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (posicao) => {
+        GEO_ATUAL = { lat: posicao.coords.latitude, lng: posicao.coords.longitude };
+        resolve(GEO_ATUAL);
+      },
+      (erro) => {
+        reject(erro);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  });
+}
+
 // Manda um heartbeat pro servidor ("ainda estou aqui") e atualiza a
-// tag de "vendo agora / únicos" com a resposta. Silencioso em caso de
-// falha — isso é só um contador, não pode travar nem poluir o painel
-// se a rede engasgar num heartbeat isolado.
+// tag de "vendo agora / únicos / externo" com a resposta. Silencioso em
+// caso de falha — isso é só um contador, não pode travar nem poluir o
+// painel se a rede engasgar num heartbeat isolado.
+// Tenta capturar localização FRESCA a cada heartbeat (17/09/2026) —
+// como a permissão já foi concedida na entrada, isso não gera novo
+// popup pro navegador, só uma leitura rápida; se falhar por qualquer
+// motivo (fora de cobertura, permissão revogada depois), reaproveita
+// a última posição conhecida (GEO_ATUAL) em vez de mandar sem nada.
 function enviarHeartbeat(){
   const senha = getSenhaSalva();
   if(!senha) return;
-  const idVisitante = getOuCriarIdVisitante();
-  const nomeCallback = 'jsonp_hb_' + Date.now() + '_' + Math.floor(Math.random()*100000);
-  const script = document.createElement('script');
-  window[nomeCallback] = function(resposta){
-    delete window[nomeCallback];
-    script.remove();
-    const tag = document.getElementById('visitantes-tag');
-    if(!tag || !resposta || resposta.erro) return;
-    tag.textContent = resposta.vendo_agora + ' vendo agora · ' + resposta.visitantes_unicos + ' únicos';
-  };
-  script.src = API_URL + '?senha=' + encodeURIComponent(senha) + '&acao=heartbeat&visitante=' + encodeURIComponent(idVisitante) + '&callback=' + nomeCallback + '&_=' + Date.now();
-  script.onerror = () => { delete window[nomeCallback]; script.remove(); };
-  document.body.appendChild(script);
+  obterLocalizacao().catch(() => null).then(() => {
+    const idVisitante = getOuCriarIdVisitante();
+    const nomeCallback = 'jsonp_hb_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    const script = document.createElement('script');
+    window[nomeCallback] = function(resposta){
+      delete window[nomeCallback];
+      script.remove();
+      const tag = document.getElementById('visitantes-tag');
+      if(!tag || !resposta || resposta.erro) return;
+      const sufixoExterno = resposta.vendo_agora_externo > 0 ? ' · ' + resposta.vendo_agora_externo + ' externo' : '';
+      tag.textContent = resposta.vendo_agora + ' vendo agora · ' + resposta.visitantes_unicos + ' únicos' + sufixoExterno;
+    };
+    let url = API_URL + '?senha=' + encodeURIComponent(senha) + '&acao=heartbeat&visitante=' + encodeURIComponent(idVisitante) + '&callback=' + nomeCallback + '&_=' + Date.now();
+    if(GEO_ATUAL){
+      url += '&lat=' + encodeURIComponent(GEO_ATUAL.lat) + '&lng=' + encodeURIComponent(GEO_ATUAL.lng);
+    }
+    script.src = url;
+    script.onerror = () => { delete window[nomeCallback]; script.remove(); };
+    document.body.appendChild(script);
+  });
 }
 function renderLogin(erro){
   document.getElementById('app').innerHTML = `
     <div class="login-wrap">
-      <div class="card elev-md login-card">
-        <h2>Painel de Vendas — Vitanuts</h2>
+      <div class="card elev-md login-card" style="text-align:center;">
+        <div class="loc-icone-wrap">🔒</div>
+        <h2 style="margin-bottom:2px;">Vitanuts</h2>
+        <p class="text-muted" style="margin-bottom:var(--space-4);">Painel de Vendas · acesso restrito</p>
         ${erro ? '<div class="erro">Senha incorreta.</div>' : ''}
-        <div class="field">
+        <div class="field" style="text-align:left;">
           <input class="input" type="password" id="senhaInput" placeholder="Senha" autofocus>
+        </div>
+        <div class="loc-aviso-box">
+          <div class="loc-aviso-titulo">📍 Este painel pede sua localização</div>
+          <p class="text-muted" style="font-size:12px;margin-bottom:6px;">É como controlamos o acesso a dados internos da Vitanuts fora do escritório. Sem aceitar, o painel não abre.</p>
+          <p class="text-muted" style="font-size:11px;margin-bottom:0;">O navegador vai perguntar assim que você clicar em Entrar.</p>
         </div>
         <button class="btn btn-primary" id="btnEntrar">Entrar</button>
       </div>
@@ -250,8 +310,43 @@ function renderLogin(erro){
     if(e.key === 'Enter') tentarLogin();
   });
 }
+// Tela mostrada quando a pessoa recusa compartilhar localização (ou o
+// navegador não suporta/falha por outro motivo) — o painel NÃO abre
+// nesse caso, mesmo com senha certa. Inclui o tutorial de como liberar
+// manualmente, porque a maioria dos navegadores não pergunta de novo
+// sozinho depois de um "bloquear" — precisa liberar nas configurações
+// do site. "Tentar novamente" só re-roda o fluxo de login (que tenta
+// pedir localização de novo); se a permissão ainda estiver bloqueada
+// no navegador, cai na mesma tela outra vez.
+function renderBloqueadoLocalizacao(){
+  document.getElementById('app').innerHTML = `
+    <div class="login-wrap">
+      <div class="card elev-md login-card" style="text-align:center;">
+        <div class="loc-icone-wrap loc-erro">🚫</div>
+        <h2 style="margin-bottom:6px;">Não foi possível abrir o painel</h2>
+        <p class="text-muted" style="margin-bottom:var(--space-4);">A senha estava correta, mas a localização não foi compartilhada. Ela é obrigatória pra acessar o painel.</p>
+        <div class="loc-aviso-box">
+          <div class="loc-aviso-titulo" style="text-transform:none;letter-spacing:0;">Como liberar no navegador</div>
+          <div class="loc-passo"><span class="loc-passo-num">1</span><span>Clique no ícone de cadeado ao lado do endereço do site, na barra do navegador</span></div>
+          <div class="loc-passo"><span class="loc-passo-num">2</span><span>Encontre "Localização" e mude de Bloquear para Permitir</span></div>
+          <div class="loc-passo"><span class="loc-passo-num">3</span><span>Recarregue a página e tente entrar de novo</span></div>
+        </div>
+        <button class="btn btn-primary" id="btnTentarDeNovo">Tentar novamente</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnTentarDeNovo').addEventListener('click', () => renderLogin(false));
+}
 async function tentarLogin(){
   const senha = document.getElementById('senhaInput').value;
+  const btn = document.getElementById('btnEntrar');
+  if(btn){ btn.textContent = 'Verificando localização…'; btn.disabled = true; }
+  try {
+    await obterLocalizacao();
+  } catch(erroLocalizacao) {
+    renderBloqueadoLocalizacao();
+    return;
+  }
   await carregarDados(senha, false);
 }
 // ehRefreshDeFundo=true significa "não é o carregamento inicial nem o
@@ -915,9 +1010,18 @@ function render(){
   tentarRenderizarMapa(dados.grupo_regioes);
 }
 // inicialização: usa senha salva na sessão, se tiver; senão mostra login
+// A localização (17/09/2026) NÃO é salva em sessionStorage/localStorage
+// de propósito — mesmo com senha salva de uma visita anterior, a
+// primeira coisa que acontece é pedir localização de novo antes de
+// mostrar qualquer dado. Isso é intencional: sessão salva não deveria
+// pular a checagem de localização, senão bastaria abrir o painel uma
+// vez no escritório pra nunca mais precisar compartilhar localização
+// depois, mesmo acessando de fora dali em dias seguintes.
 const senhaSalva = getSenhaSalva();
 if(senhaSalva){
-  carregarDados(senhaSalva, false);
+  obterLocalizacao()
+    .then(() => carregarDados(senhaSalva, false))
+    .catch(() => renderBloqueadoLocalizacao());
 } else {
   renderLogin(false);
 }
