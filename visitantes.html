@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitantes — Painel de Vendas Vitanuts</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root {
+  --color-bg: #161826;
+  --color-surface: #232532;
+  --color-surface-2: #1e1f29;
+  --color-text: #e9e9ed;
+  --color-accent: #9184d9;
+  --color-divider: color-mix(in srgb, #e9e9ed 16%, transparent);
+  --color-neutral-400: #b2b6ca;
+  --color-neutral-500: #9397ab;
+  --color-neutral-600: #75798c;
+  --color-red: #e2685f;
+  --color-red-bg: rgba(226, 104, 95, 0.14);
+  --color-green: #6fcf97;
+  --radius-md: 8px;
+  --shadow-md: 0 0 0 1px #595d6c, 0 6px 18px rgba(0,0,0,0.55);
+}
+* , *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: "Inter", system-ui, sans-serif; font-size: 13.5px; line-height: 1.5; }
+h1, h2 { font-weight: 500; letter-spacing: -0.015em; margin: 0; }
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+.wrap { max-width: 900px; margin: 0 auto; padding: 24px 18px 60px; }
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: 80vh; padding: 18px; }
+.card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 20px; }
+.login-card { width: min(340px, 100%); text-align: center; }
+.input { width: 100%; min-height: 34px; padding: 6px 10px; font: inherit; font-size: 13px; color: var(--color-text); background: var(--color-bg); border: 1px solid var(--color-divider); border-radius: var(--radius-md); margin-bottom: 12px; }
+.btn { display: block; width: 100%; cursor: pointer; font-weight: 500; font-size: 13px; color: var(--color-accent); background: transparent; border: 1px solid var(--color-accent); padding: 8px; border-radius: var(--radius-md); }
+.btn:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); }
+.erro { color: var(--color-red); font-size: 12px; margin-bottom: 8px; }
+.nav { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.nav h1 { font-size: 18px; }
+.nav .sub { font-size: 11.5px; color: var(--color-neutral-500); }
+.nav .refresh-btn { margin-left: auto; cursor: pointer; background: var(--color-surface); border: 1px solid var(--color-divider); color: var(--color-text); font-size: 12px; padding: 6px 12px; border-radius: var(--radius-md); }
+.nav .refresh-btn:hover { background: var(--color-surface-2); }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi { background: var(--color-surface-2); border-radius: var(--radius-md); padding: 12px 14px; }
+.kpi.alerta { background: var(--color-red-bg); }
+.kpi .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-neutral-500); margin-bottom: 4px; }
+.kpi.alerta .label { color: var(--color-red); }
+.kpi .valor { font-size: 22px; font-weight: 500; }
+.kpi.alerta .valor { color: var(--color-red); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600); padding: 8px; border-bottom: 1px solid var(--color-divider); }
+td { padding: 9px 8px; border-bottom: 1px solid var(--color-divider); vertical-align: middle; }
+tr.linha-externo { background: rgba(226, 104, 95, 0.08); }
+.id-mono { font-family: "Courier New", monospace; font-size: 11px; color: var(--color-neutral-400); }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 6px; display: inline-block; }
+.badge-externo { background: var(--color-red-bg); color: var(--color-red); }
+.badge-escritorio { background: var(--color-surface-2); color: var(--color-neutral-400); }
+.badge-sem-local { background: var(--color-surface-2); color: var(--color-neutral-600); }
+.badge-vendo-agora { background: rgba(111, 207, 151, 0.14); color: var(--color-green); margin-left: 6px; }
+.link-mapa { color: var(--color-accent); text-decoration: none; font-size: 11.5px; }
+.link-mapa:hover { text-decoration: underline; }
+.empty { text-align: center; padding: 40px 18px; color: var(--color-neutral-500); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ================== CONFIGURAÇÃO — mesma URL do painel.html ==================
+const API_URL = "https://script.google.com/macros/s/AKfycbwR0Avf_mCAERMssJ26PcfCMvgSLDi0DsmKZPqA6bpKwafkEGT7pKG1Xub25NpUbWeCtA/exec";
+// ================================================================================
+// Senha compartilhada com o painel principal — mesma chave de
+// sessionStorage ('painel_senha'), então se essa página for aberta a
+// partir de um link dentro do painel (mesma aba), não pede senha de
+// novo. Aberta direto numa aba nova, sessionStorage não é compartilhado
+// entre abas (mesmo same-origin), então pede a senha normalmente.
+function getSenhaSalva(){ return sessionStorage.getItem('painel_senha') || ''; }
+function salvarSenha(s){ sessionStorage.setItem('painel_senha', s); }
+
+function buscarViaJsonp(params){
+  return new Promise((resolve, reject) => {
+    const nomeCallback = 'jsonp_visit_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    const script = document.createElement('script');
+    let terminou = false;
+    window[nomeCallback] = function(dados){
+      terminou = true;
+      resolve(dados);
+      delete window[nomeCallback];
+      script.remove();
+    };
+    const query = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+    script.src = API_URL + '?' + query + '&callback=' + nomeCallback + '&_=' + Date.now();
+    script.onerror = () => {
+      if(!terminou) reject(new Error('Falha ao carregar dados'));
+      delete window[nomeCallback];
+      script.remove();
+    };
+    document.body.appendChild(script);
+    setTimeout(() => {
+      if(!terminou){
+        reject(new Error('Tempo esgotado'));
+        delete window[nomeCallback];
+        script.remove();
+      }
+    }, 20000);
+  });
+}
+
+function escapeHtml(str){ const div = document.createElement('div'); div.textContent = str ?? ''; return div.innerHTML; }
+
+function renderLogin(erro){
+  document.getElementById('app').innerHTML = `
+    <div class="login-wrap">
+      <div class="card login-card">
+        <h2 style="margin-bottom:2px;">Visitantes</h2>
+        <p class="text-muted" style="margin-bottom:16px;">Painel de Vendas · acesso restrito</p>
+        ${erro ? '<div class="erro">Senha incorreta.</div>' : ''}
+        <input class="input" type="password" id="senhaInput" placeholder="Senha" autofocus>
+        <button class="btn" id="btnEntrar">Entrar</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnEntrar').addEventListener('click', tentarLogin);
+  document.getElementById('senhaInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') tentarLogin(); });
+}
+
+async function tentarLogin(){
+  const senha = document.getElementById('senhaInput').value;
+  await carregarDados(senha);
+}
+
+async function carregarDados(senha){
+  try {
+    const json = await buscarViaJsonp({ senha: senha, secao: 'visitantes' });
+    if(json.erro === 'senha_incorreta'){
+      renderLogin(true);
+      return;
+    }
+    salvarSenha(senha);
+    render(json);
+  } catch(err){
+    document.getElementById('app').innerHTML = `<div class="wrap"><div class="empty">Erro ao buscar dados: ${escapeHtml(err.message)}</div></div>`;
+  }
+}
+
+function statusBadge(v){
+  if(!v.localizacao || v.localizacao.erro){
+    return '<span class="badge badge-sem-local">Sem localização</span>';
+  }
+  return v.localizacao.externo
+    ? '<span class="badge badge-externo">Externo</span>'
+    : '<span class="badge badge-escritorio">Escritório</span>';
+}
+
+function linkMapa(v){
+  if(!v.localizacao || v.localizacao.erro) return '—';
+  const url = 'https://www.google.com/maps?q=' + v.localizacao.lat + ',' + v.localizacao.lng;
+  return `<a class="link-mapa" href="${url}" target="_blank" rel="noopener">Abrir no mapa ↗</a>`;
+}
+
+function distanciaTexto(v){
+  if(!v.localizacao || v.localizacao.erro) return '—';
+  return Math.round(v.localizacao.distancia_do_escritorio_metros).toLocaleString('pt-BR') + ' m';
+}
+
+function ultimaVezTexto(v){
+  const min = v.minutos_desde_ultimo_acesso;
+  if(min < 1) return 'agora mesmo';
+  if(min < 60) return 'há ' + min + ' min';
+  const horas = Math.floor(min / 60);
+  if(horas < 24) return 'há ' + horas + ' h';
+  const dias = Math.floor(horas / 24);
+  return 'há ' + dias + (dias === 1 ? ' dia' : ' dias');
+}
+
+function render(dados){
+  const visitantes = dados.visitantes || [];
+  const linhas = visitantes.map(v => `
+    <tr class="${v.localizacao && v.localizacao.externo ? 'linha-externo' : ''}">
+      <td><span class="id-mono">${escapeHtml(v.id_visitante)}</span>${v.vendo_agora ? '<span class="badge badge-vendo-agora">vendo agora</span>' : ''}</td>
+      <td>${escapeHtml(ultimaVezTexto(v))}</td>
+      <td>${escapeHtml(distanciaTexto(v))}</td>
+      <td>${statusBadge(v)}</td>
+      <td>${linkMapa(v)}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="wrap">
+      <div class="nav">
+        <div>
+          <h1>Visitantes</h1>
+          <div class="sub">Painel de Vendas · Vitanuts · raio de tolerância ${dados.raio_tolerancia_metros} m</div>
+        </div>
+        <button class="refresh-btn" id="btnAtualizar">Atualizar</button>
+      </div>
+      <div class="kpis">
+        <div class="kpi">
+          <div class="label">Visitantes únicos</div>
+          <div class="valor">${dados.total_visitantes_unicos}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Vendo agora</div>
+          <div class="valor">${dados.vendo_agora}</div>
+        </div>
+        <div class="kpi ${dados.vendo_agora_externo > 0 ? 'alerta' : ''}">
+          <div class="label">Externo agora</div>
+          <div class="valor">${dados.vendo_agora_externo}</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto;">
+        ${visitantes.length === 0 ? '<div class="empty">Nenhum visitante registrado ainda.</div>' : `
+        <table>
+          <thead>
+            <tr>
+              <th>Visitante</th>
+              <th>Última vez</th>
+              <th>Distância</th>
+              <th>Status</th>
+              <th>Mapa</th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>`}
+      </div>
+    </div>
+  `;
+  document.getElementById('btnAtualizar').addEventListener('click', () => {
+    const senha = getSenhaSalva();
+    if(senha) carregarDados(senha);
+  });
+}
+
+const senhaSalva = getSenhaSalva();
+if(senhaSalva){
+  carregarDados(senhaSalva);
+} else {
+  renderLogin(false);
+}
+
+// atualiza sozinho a cada 60s, enquanto a aba estiver aberta com sessão válida
+setInterval(() => {
+  const s = getSenhaSalva();
+  if(s) carregarDados(s);
+}, 60 * 1000);
+</script>
+</body>
+</html>
